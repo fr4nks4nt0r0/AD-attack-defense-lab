@@ -45,7 +45,7 @@ Per ogni debolezza seguo sempre lo stesso processo ripetibile:
 ## Setup del lab
 Diversamente dalla mia altra esperienza con active directory dove ho usato molto l'interfaccia grafica ho voluto sperimentare un uso maggiore di powershell che avevo imparato su THM e seguendo guide.
 
-### 1. Domain Controller (DC01)
+DOMAIN CONTROLLER (DC01)
 
 IP statico e DNS verso sé stesso:
 
@@ -64,7 +64,7 @@ Install-ADDSForest -DomainName "lab.local" -DomainNetbiosName "LAB" -InstallDns 
 
 Verifica: `Get-ADDomain` deve restituire `lab.local`, seguito da `Get-Service ADWS,KDC,Netlogon,DNS` che devono tutti essere in stato `Running`.
 
-### 2. Workstation client (WS01)
+WORKSTATION CLIENT (WS01)
 
 IP statico, DNS verso il DC, poi join al dominio:
 
@@ -74,9 +74,9 @@ Set-DnsClientServerAddress -InterfaceAlias "Ethernet0" -ServerAddresses 192.168.
 Add-Computer -DomainName "lab.local" -Credential LAB\Administrator -Restart
 ```
 
-Verifica dal DC: `Get-ADComputer -Filter * | Select Name` deve elencare `WS01`.
+Verifiva del DC: `Get-ADComputer -Filter * | Select Name` dove deve esserci `WS01`.
 
-### 3. Utenti e vulnerabilità volute
+UTENTI E FALLE VOLUTE
 
 OU dedicata, utenti standard, e l'account di servizio vulnerabile al Kerberoasting:
 
@@ -94,16 +94,16 @@ New-ADUser -Name "SQL Service" -SamAccountName "svc_sql" -UserPrincipalName "svc
 Set-ADUser -Identity "svc_sql" -ServicePrincipalNames @{Add="MSSQLSvc/dc01.lab.local:1433"}
 ```
 
-### 4. Logging (prima di qualsiasi attacco)
+LOGGING 
 
-**Sysmon** su DC01 e WS01, con una configurazione standard (es. SwiftOnSecurity):
+Sysmon su DC01 e WS01, con una configurazione standard (es. SwiftOnSecurity):
 
 ```powershell
 .\Sysmon64.exe -accepteula -i sysmonconfig-export.xml
 Get-WinEvent -ListLog "Microsoft-Windows-Sysmon/Operational" | Select LogName,RecordCount
 ```
 
-**Auditing Kerberos/Logon** sul DC, tramite GUID delle sottocategorie (indipendenti dalla lingua del sistema, butta un occhio su "PROBLEMI E SOLUZIONI"):
+Auditing Kerberos/Logon sul DC, tramite GUID delle sottocategorie (butta un occhio su "PROBLEMI E SOLUZIONI"):
 
 ```powershell
 # Kerberos Service Ticket Operations (Event ID 4769)
@@ -114,7 +114,7 @@ auditpol /set /subcategory:"{0CCE9242-69AE-11D9-BED3-505054503030}" /success:ena
 auditpol /set /subcategory:"{0CCE9215-69AE-11D9-BED3-505054503030}" /success:enable /failure:enable
 ```
 
-### 5. Attaccante (Kali)
+ATTACCANTE - KALI
 
 IP statico sul segmento e DNS verso il DC:
 
@@ -123,35 +123,19 @@ sudo ip addr add 192.168.56.100/24 dev eth0
 echo "nameserver 192.168.56.10" | sudo tee /etc/resolv.conf
 ```
 
-Strumenti usati per kerberosting: **Impacket** e **John the Ripper**.
+Strumenti usati per kerberosting: Impacket e John the Ripper.
 
----
+----------
 
-## Metodologia
-
-Per ogni debolezza seguo lo stesso processo ripetibile. Lo descrivo qui una volta, così nei capitoli non si ripete:
-
-1. **Introduco la debolezza** — configuro l'oggetto AD in modo volutamente vulnerabile e spiego perché quella configurazione è realistica, non teorica.
-2. **Attacco e misuro l'impatto** — eseguo la tecnica dalla macchina attaccante e valuto cosa ottengo davvero (inclusa l'effettiva crackabilità, non solo "l'attacco parte").
-3. **Catturo la traccia difensiva** — identifico quali log e quali Event ID registrano l'attacco, e quale campo specifico lo tradisce.
-4. **Applico l'hardening** — introduco la contromisura.
-5. **Ripeto l'attacco identico e misuro il delta** — stesso comando, confronto prima/dopo.
-
-Il punto 5 è il cuore del progetto: l'hardening raramente fa "sparire" un attacco. Più spesso lo rende **inefficace**. Mostrare la differenza tra le due cose è ciò che distingue chi capisce il meccanismo da chi applica una checklist.
-
----
-
-## PROBLEMI E SOLUZIONI
-
-Ostacoli reali incontrati nella costruzione dell'ambiente, validi per tutti i capitoli. I problemi specifici di un attacco sono documentati nel capitolo relativo.
+## !!!!!!!!!!  PROBLEMI E SOLUZIONI  !!!!!!!!!!
 
 ### Comandi in inglese che falliscono su Windows Server in italiano
 
-Più volte comandi presi da guide anglofone hanno fallito perché i nomi di gruppi e categorie sono **localizzati** sul sistema in italiano:
+Più volte comandi presi da guide anglofone hanno fallito perché i nomi di gruppi e categorie sono localizzati a seconda del sistema, e stavolta ho scaricato una ISO in italiano:
 
 - `Enable-NetFirewallRule -DisplayGroup "File and Printer Sharing"` → `ObjectNotFound`
 - `auditpol /set /subcategory:"Kerberos Service Ticket Operations"` → `Errore 0x00000057: Parametro non corretto`
-- `New-ADServiceAccount ... -PrincipalsAllowedToRetrieveManagedPassword "Domain Computers"` → in italiano il gruppo è **"Computer del dominio"**
+- `New-ADServiceAccount ... -PrincipalsAllowedToRetrieveManagedPassword "Domain Computers"` → in italiano il gruppo è----> Computer del dominio
 
 **Risoluzione:** usare identificatori indipendenti dalla lingua — i **GUID** delle sottocategorie di audit e i **SID/RID** dei gruppi (es. `Domain Computers` ha sempre RID `515`). Su sistemi localizzati è una pratica di robustezza, non un ripiego.
 
@@ -159,28 +143,10 @@ Più volte comandi presi da guide anglofone hanno fallito perché i nomi di grup
 
 WS01 restava con un indirizzo `169.254.x.x` (APIPA) e non raggiungeva il DC (`ping: errore generale`). Impostare solo il DNS non aveva assegnato un IP valido.
 
-**Risoluzione:** assegnazione esplicita dell'indirizzo statico, con attenzione al nome esatto dell'interfaccia. Verifica collaterale: confermare nel Virtual Network Editor che tutte le VM siano sullo stesso VMnet con subnet `192.168.56.0/24` — un mismatch di segmento virtuale è la causa più comune di VM che "non si vedono" pur avendo IP apparentemente corretti.
+**Risoluzione:** assegnazione esplicita dell'indirizzo statico, con attenzione al nome esatto dell'interfaccia. Verifica collaterale: confermare nel Virtual Network Editor che tutte le VM siano sullo stesso VMnet con subnet `192.168.56.0/24`.
 
 ### hashcat senza GPU in ambiente virtualizzato
 
-```
-clGetPlatformIDs(): CL_PLATFORM_NOT_FOUND_KHR
-ATTENTION! No OpenCL, HIP or CUDA compatible platform found.
-```
+Le VM non hanno accesso alla GPU e hashcat di defaut la richiede
 
-Le VM non hanno accesso alla GPU e hashcat cerca un runtime OpenCL/CUDA.
-
-**Risoluzione:** uso di **John the Ripper**, che gira su CPU senza configurazione ed è la scelta più comune per il Kerberoasting. In alternativa, installare un runtime CPU (`pocl-opencl-icd`) e forzare hashcat sul device CPU con `-D 1`.
-
----
-
-## Tecnologie usate
-
-`Windows Server 2022` · `Windows 11` · `Kali Linux` · `Active Directory` · `Kerberos` · `Impacket` · `John the Ripper` · `Sysmon` · `Windows Security Auditing` · `VMware Workstation`
-
----
-
-## Disclaimer
-
-Ambiente di laboratorio isolato, costruito a scopo di studio difensivo. Tutte le tecniche sono eseguite su sistemi di mia proprietà, su una rete senza accesso a internet. Nessuna di queste attività va replicata su sistemi di terzi senza autorizzazione esplicita.
-
+Risoluzione: uso di John the Ripper, che gira su CPU senza configurazione 
