@@ -5,6 +5,14 @@ Dopo essermi confrontato con alcuni esperti che hanno valutato i miei precedenti
 L'ambiente è un piccolo dominio Active Directory virtualizzato su VMware, formato da un DC, una workstation di dominio e una macchina attaccante.
 Ogni debolezza introdotta è volontaria.
 
+INDICE ATTACCHI
+| Attacco |	MITRE ATT&CK | Stato | Capitolo |
+|------|-------|----|----|
+| Kerberoasting |	T1558.003 |	IN CORSO | Completo |	/kerberoasting |
+| DCSync |	T1003.006 |	Da cominciare | // |
+| Pass-the-Hash / Movimento laterale |	T1550.002 |	Da cominciare | // |
+| Abuso di delega |	T1558.001 |	Da cominciare | // |
+
 
 
 
