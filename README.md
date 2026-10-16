@@ -3,7 +3,7 @@
 Dopo essermi confrontato con alcuni esperti che hanno valutato i miei precedenti progetti mi sono impegnato a svilupparne un nuovo più incentrato sulla sicurezza vera e propria al momento dell'attacco che sulle basi sistemistiche di network ecc come i precedentiLaboratorio di simulazione attacchi informatici da prospettiva offensiva e difensiva, con seguente hardening per studiare le tecniche di attacco e le relative contromisure, documentando per ogni debolezza il ciclo completo: configurazione vulnerabile, poi attacco, la traccia difensiva, l' hardening e il re-test.
 
 L'ambiente è un piccolo dominio Active Directory virtualizzato su VMware, formato da un DC, una workstation di dominio e una macchina attaccante.
-Ogni debolezza introdotta è volontaria.
+Ogni vulnerabilità introdotta è volontaria.
 
 INDICE ATTACCHI
 | Attacco |	MITRE ATT&CK | Stato | Capitolo |
@@ -34,16 +34,16 @@ METODOLOGIA
 
 Per ogni debolezza seguo sempre lo stesso processo ripetibile:
 
-1. **Introduco la debolezza** — configuro l'oggetto AD in modo volutamente vulnerabile e spiegando perché quella configurazione è realistica.
-2. **Attacco e misuro l'impatto** — eseguo la tecnica dalla macchina attaccante e vedo cosa ottengo.
-3. **Catturo la traccia difensiva** — identifico quali log e quali Event ID registrano l'attacco, e quale campo specifico lo tradisce.
+1. **Introduco la falla** — configuro l'oggetto AD in modo volutamente vulnerabile e spiegando perché quella configurazione è realistica.
+2. **Attacco e valuto l'impatto** — eseguo la tecnica dalla macchina attaccante e vedo cosa ottengo.
+3. **Catturo la traccia difensiva** — identifico quali log e quali ID registrano l'attacco.
 4. **Applico l'hardening** — introduco la contromisura.
 5. **Ripeto l'attacco identico confrontando risultati** — stesso comando, e confronto il risultato prima/dopo.
 
 
 -----------
 ## Setup del lab
-Diversamente dalla mia altra esperienza con active directory dove ho usato molto l'interfaccia grafica ho voluto sperimentare un uso maggiore di powershell che avevo imparato su THM e seguendo guide.
+Diversamente dalla mia altra esperienza con active directory dove ho usato molto l'interfaccia grafica ho voluto sperimentare powershell che di cui avevo cominciato a studiare le basi.
 
 DOMAIN CONTROLLER (DC01)
 
@@ -137,13 +137,13 @@ Più volte comandi presi da guide anglofone hanno fallito perché i nomi di grup
 - `auditpol /set /subcategory:"Kerberos Service Ticket Operations"` → `Errore 0x00000057: Parametro non corretto`
 - `New-ADServiceAccount ... -PrincipalsAllowedToRetrieveManagedPassword "Domain Computers"` → in italiano il gruppo è----> Computer del dominio
 
-**Risoluzione:** usare identificatori indipendenti dalla lingua — i **GUID** delle sottocategorie di audit e i **SID/RID** dei gruppi (es. `Domain Computers` ha sempre RID `515`). Su sistemi localizzati è una pratica di robustezza, non un ripiego.
+**Risoluzione:** usare identificatori indipendenti dalla lingua, i GUID delle sottocategorie di audit e i SID/RID dei gruppi (Ad esempio "Domain Computers" ha sempre RID "515").
 
 ### Workstation con indirizzo APIPA dopo il join
 
-WS01 restava con un indirizzo `169.254.x.x` (APIPA) e non raggiungeva il DC (`ping: errore generale`). Impostare solo il DNS non aveva assegnato un IP valido.
+WS01 restava con un indirizzo "169.254.x.x" (APIPA) e non raggiungeva il DC (dando sul ping un errore generale). Impostare solo il DNS non aveva assegnato un IP valido.
 
-**Risoluzione:** assegnazione esplicita dell'indirizzo statico, con attenzione al nome esatto dell'interfaccia. Verifica collaterale: confermare nel Virtual Network Editor che tutte le VM siano sullo stesso VMnet con subnet `192.168.56.0/24`.
+**Risoluzione:** ho assegnato esplicitamente l'indirizzo statico, prestando attenzione al nome esatto dell'interfaccia.
 
 ### hashcat senza GPU in ambiente virtualizzato
 
