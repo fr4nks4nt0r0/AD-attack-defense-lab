@@ -1,51 +1,72 @@
-# AD-attack-defense-lab
+# AD Attack And Defense Lab
 
-Dopo essermi confrontato con alcuni esperti che hanno valutato i miei precedenti progetti mi sono impegnato a svilupparne un nuovo più incentrato sulla sicurezza vera e propria al momento dell'attacco che sulle basi sistemistiche di network ecc come i precedentiLaboratorio di simulazione attacchi informatici da prospettiva offensiva e difensiva, con seguente hardening per studiare le tecniche di attacco e le relative contromisure, documentando per ogni debolezza il ciclo completo: configurazione vulnerabile, poi attacco, la traccia difensiva, l' hardening e il re-test.
+Dopo essermi confrontato con alcuni esperti che hanno valutato i miei progetti precedenti, ho sviluppato questo lab più incentrato sulla sicurezza al momento dell'attacco, che sulle basi sistemistiche di networking.
+È un laboratorio di simulazione di attacchi Active Directory dalla doppia prospettiva offensiva e difensiva: per ogni falla volutamente introdotta documento il ciclo:
+configurazione vulnerabile, attacco, traccia difensiva, hardening e infine il re-test per confrontare il paragone.
 
-L'ambiente è un piccolo dominio Active Directory virtualizzato su VMware, formato da un DC, una workstation di dominio e una macchina attaccante.
-Ogni vulnerabilità introdotta è volontaria.
-
-INDICE ATTACCHI
-| Attacco |	MITRE ATT&CK | Stato | Capitolo |
-|------|-------|----|----|
-| Kerberoasting |	T1558.003 |	IN CORSO | Completo |	/kerberoasting |
-| DCSync |	T1003.006 |	Da cominciare | // |
-| Pass-the-Hash / Movimento laterale |	T1550.002 |	Da cominciare | // |
-| Abuso di delega |	T1558.001 |	Da cominciare | // |
+L'ambiente è un piccolo dominio di active directory virtualizzato su VMware, con un DC, un client w11, una macchina attaccante con kali linux e wazuh che gira su ubuntu server.
 
 
+## INDICE DEGLI ATTACCHI
+
+| # | Attacco | MITRE ATT&CK | Stato | Capitolo |
+|---|---------|--------------|-------|----------|
+| 00 | Baseline detection + SIEM | — | !COMPLET0! | `/00-baseline-siem` |
+| 01 | LLMNR/NBT-NS poisoning + NTLM relay | T1557.001 | Da cominciare | `/01-llmnr-relay` |
+| 02 | ACL abuse + BloodHound | T1069/T1087 + T1098/T1222 | Da cominciare | `/02-acl-bloodhound` |
+| 03 | AD CS abuse (ESC1/ESC8) | T1649 | Da cominciare | `/03-adcs-esc` |
 
 
-ARCHITETTURA
+----------
+
+## Architettura
 
 | Host | Ruolo | OS | IP |
 |------|-------|----|----|
-| **DC01** | Domain Controller + DNS | Windows Server 2022 | `192.168.56.10` |
-| **WS01** | Workstation di dominio | Windows 11 | `192.168.56.20` |
-| **Kali** | Macchina attaccante | Kali Linux | `192.168.56.100` |
+| DC01 | Domain Controller e DNS | Windows Server 2022 | `192.168.56.10` |
+| WS01 | Client workstation | Windows 11 | `192.168.56.20` |
+| WS02 | Seconda workstation (per movimento laterale) | Windows 11 | `192.168.56.21` |
+| KALI | Macchina attaccante | Kali Linux | `192.168.56.100` |
+| WAZUH | SIEM / detection | Ubuntu Server 22.04 con Wazuh 4.14 | `192.168.56.50` |
 
-- Dominio: lab.local
-- Rete: host-only 192.168.56.0/24 (VMware VMnet1), isolata da internet
-- Hypervisor: VMware Workstation
+- **Dominio:** `lab.local`
+- **Rete:** host-only `192.168.56.0/24` (VMware VMnet1)
+- **Hypervisor:** VMware Workstation
 
-Setup minimo (3 VM) perchè un DC, un client e un attaccante bastano a riprodurre la maggior parte delle tecniche AD, il secondo client lo aggiungerò quando passerò al movimento laterale.
+---
 
-METODOLOGIA
+## Metodologia
 
-Per ogni debolezza seguo sempre lo stesso processo ripetibile:
+Per ciascuna vulnerabilità:
 
-1. **Introduco la falla** — configuro l'oggetto AD in modo volutamente vulnerabile e spiegando perché quella configurazione è realistica.
-2. **Attacco e valuto l'impatto** — eseguo la tecnica dalla macchina attaccante e vedo cosa ottengo.
-3. **Catturo la traccia difensiva** — identifico quali log e quali ID registrano l'attacco.
-4. **Applico l'hardening** — introduco la contromisura.
-5. **Ripeto l'attacco identico confrontando risultati** — stesso comando, e confronto il risultato prima/dopo.
+1. **Introduco la falla** — configuro il sistema in modo volutamente vulnerabile
+2. **Faccio l'sttacco e valuto l'impatto** — eseguo l'attacco effettivo e documento il risultato.
+3. **Catturo la traccia difensiva** — identifico quali log/ID registrano l'attacco e come appaiono sul SIEM.
+4. **hardening** — Applico le dovute contromisure.
+5. **Ripeto l'attacco** — stessa tecnica e confrontando il prima e dopo.
 
+---
 
------------
-## Setup del lab
-Diversamente dalla mia altra esperienza con active directory dove ho usato molto l'interfaccia grafica ho voluto sperimentare powershell che di cui avevo cominciato a studiare le basi.
+## Struttura del repository
 
-DOMAIN CONTROLLER (DC01)
+```
+README.md                 ///setup e architettura
+/topology/                ///topologia
+/00-baseline-siem/        ///Wazuh, Sysmon, audit policy
+/01-llmnr-relay/          
+/02-acl-bloodhound/
+/03-adcs-esc/
+```
+
+---
+
+## Setup del lab di base
+
+A differenza del mio altro lab su Active Directory, dove ho usato principalmetne l'interfaccia grafica, qui ho voluto lavorare con PowerShell.
+
+NOTA: la fondazione di detection (Wazuh + Sysmon + audit policy) è documentata a parte in [`/00-baseline-siem`](./00-baseline-siem).
+
+### Domain Controller (DC01)
 
 IP statico e DNS verso sé stesso:
 
@@ -55,18 +76,18 @@ Set-DnsClientServerAddress -InterfaceAlias "Ethernet0" -ServerAddresses 127.0.0.
 Rename-Computer -NewName "DC01" -Restart
 ```
 
-Installazione del ruolo AD DS e la promozione a nuova foresta:
+Installazione del ruolo AD DS e promozione a nuova foresta:
 
 ```powershell
 Install-WindowsFeature AD-Domain-Services -IncludeManagementTools
 Install-ADDSForest -DomainName "lab.local" -DomainNetbiosName "LAB" -InstallDns -Force
 ```
 
-Verifica: `Get-ADDomain` deve restituire `lab.local`, seguito da `Get-Service ADWS,KDC,Netlogon,DNS` che devono tutti essere in stato `Running`.
+Test di verifica: `Get-ADDomain` deve darmi `lab.local`; `Get-Service ADWS,KDC,Netlogon,DNS` devono essere tutti `Running`.
 
-WORKSTATION CLIENT (WS01)
+### Workstation (WS01)
 
-IP statico, DNS verso il DC, poi join al dominio:
+IP statico, DNS verso il DC, join al dominio:
 
 ```powershell
 New-NetIPAddress -InterfaceAlias "Ethernet0" -IPAddress 192.168.56.20 -PrefixLength 24
@@ -74,47 +95,20 @@ Set-DnsClientServerAddress -InterfaceAlias "Ethernet0" -ServerAddresses 192.168.
 Add-Computer -DomainName "lab.local" -Credential LAB\Administrator -Restart
 ```
 
-Verifiva del DC: `Get-ADComputer -Filter * | Select Name` dove deve esserci `WS01`.
+Verifica dal Domain Controller: `Get-ADComputer -Filter * | Select Name` deve elencare `WS01`.
 
-UTENTI E FALLE VOLUTE
+### Utenti di base
 
-OU dedicata, utenti standard, e l'account di servizio vulnerabile al Kerberoasting:
-
+OU dedicata e utenti standard. Gli account vulnerabili specifici verranno creati nel capitolo dell'attacco relativo.
 ```powershell
 New-ADOrganizationalUnit -Name "LabUsers" -Path "DC=lab,DC=local"
 
-$pwNormale = ConvertTo-SecureString "Autunno2026!" -AsPlainText -Force
+$pw = ConvertTo-SecureString "Autunno2026!" -AsPlainText -Force
 New-ADUser -Name "Mario Rossi" -SamAccountName "m.rossi" -UserPrincipalName "m.rossi@lab.local" `
-  -Path "OU=LabUsers,DC=lab,DC=local" -AccountPassword $pwNormale -Enabled $true
-
-# Account di servizio con SPN (debolezza del Capitolo 1)
-$pwDebole = ConvertTo-SecureString "Password123" -AsPlainText -Force
-New-ADUser -Name "SQL Service" -SamAccountName "svc_sql" -UserPrincipalName "svc_sql@lab.local" `
-  -Path "OU=LabUsers,DC=lab,DC=local" -AccountPassword $pwDebole -Enabled $true -PasswordNeverExpires $true
-Set-ADUser -Identity "svc_sql" -ServicePrincipalNames @{Add="MSSQLSvc/dc01.lab.local:1433"}
+  -Path "OU=LabUsers,DC=lab,DC=local" -AccountPassword $pw -Enabled $true
 ```
 
-LOGGING 
-
-Sysmon su DC01 e WS01, con una configurazione standard (es. SwiftOnSecurity):
-
-```powershell
-.\Sysmon64.exe -accepteula -i sysmonconfig-export.xml
-Get-WinEvent -ListLog "Microsoft-Windows-Sysmon/Operational" | Select LogName,RecordCount
-```
-
-Auditing Kerberos/Logon sul DC, tramite GUID delle sottocategorie (butta un occhio su "PROBLEMI E SOLUZIONI"):
-
-```powershell
-# Kerberos Service Ticket Operations (Event ID 4769)
-auditpol /set /subcategory:"{0CCE9240-69AE-11D9-BED3-505054503030}" /success:enable /failure:enable
-# Kerberos Authentication Service (Event ID 4768)
-auditpol /set /subcategory:"{0CCE9242-69AE-11D9-BED3-505054503030}" /success:enable /failure:enable
-# Logon (Event ID 4624/4625)
-auditpol /set /subcategory:"{0CCE9215-69AE-11D9-BED3-505054503030}" /success:enable /failure:enable
-```
-
-ATTACCANTE - KALI
+### Attaccante (Kali)
 
 IP statico sul segmento e DNS verso il DC:
 
@@ -123,30 +117,30 @@ sudo ip addr add 192.168.56.100/24 dev eth0
 echo "nameserver 192.168.56.10" | sudo tee /etc/resolv.conf
 ```
 
-Strumenti usati per kerberosting: Impacket e John the Ripper.
+---
 
-----------
+## PROBLEMI E SOLUZIONI
 
-## !!!!!!!!!!  PROBLEMI E SOLUZIONI  !!!!!!!!!!
+Intoppi reali incontrati durante la costruzione del lab. *(Gli intoppi del deploy SIEM sono documentati in `/00-baseline-siem`.)*
 
-### Comandi in inglese che falliscono su Windows Server in italiano
-
-Più volte comandi presi da guide anglofone hanno fallito perché i nomi di gruppi e categorie sono localizzati a seconda del sistema, e stavolta ho scaricato una ISO in italiano:
-
+### Comandi in inglese che falliscono su Windows in italiano
+Nomi di gruppi e categorie sono localizzati, e stavolta avevo ben pensato di installar un ISO in italiano, di conseguenza alcuni cmd trovati online non hanno funzionato finchè non sono stati riadattati.
 - `Enable-NetFirewallRule -DisplayGroup "File and Printer Sharing"` → `ObjectNotFound`
-- `auditpol /set /subcategory:"Kerberos Service Ticket Operations"` → `Errore 0x00000057: Parametro non corretto`
-- `New-ADServiceAccount ... -PrincipalsAllowedToRetrieveManagedPassword "Domain Computers"` → in italiano il gruppo è----> Computer del dominio
+- `auditpol /set /subcategory:"Kerberos Service Ticket Operations"` → `Errore 0x57: Parametro non corretto`
+- `New-ADServiceAccount ... -PrincipalsAllowedToRetrieveManagedPassword "Domain Computers"` → in italiano il gruppo è "Computer del dominio"
 
-**Risoluzione:** usare identificatori indipendenti dalla lingua, i GUID delle sottocategorie di audit e i SID/RID dei gruppi (Ad esempio "Domain Computers" ha sempre RID "515").
+**Risoluzione:** usare identificatori indipendenti dalla lingua, i GUID delle sottocategorie di audit e i SID/RID dei gruppi ("Domain Computers" ha sempre RID `515`).
 
 ### Workstation con indirizzo APIPA dopo il join
-
-WS01 restava con un indirizzo "169.254.x.x" (APIPA) e non raggiungeva il DC (dando sul ping un errore generale). Impostare solo il DNS non aveva assegnato un IP valido.
-
-**Risoluzione:** ho assegnato esplicitamente l'indirizzo statico, prestando attenzione al nome esatto dell'interfaccia.
+WS01 restava con un `169.254.x.x` (APIPA) e non raggiungeva il DC. Impostare solo il DNS non aveva assegnato un IP valido.
+**Risoluzione:** assegnato esplicitamente l'indirizzo statico, prestando attenzione al nome esatto dell'interfaccia.
 
 ### hashcat senza GPU in ambiente virtualizzato
+Le VM non hanno accesso alla GPU e hashcat di default la richiede.
+**Risoluzione:** ho usato John the Ripper, che gira su CPU senza configurazione.
 
-Le VM non hanno accesso alla GPU e hashcat di defaut la richiede
+---
 
-Risoluzione: uso di John the Ripper, che gira su CPU senza configurazione 
+## Stato del lab
+
+In costruzione attiva. 
