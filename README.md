@@ -7,16 +7,6 @@ configurazione vulnerabile, attacco, traccia difensiva, hardening e infine il re
 L'ambiente è un piccolo dominio di active directory virtualizzato su VMware, con un DC, un client w11, una macchina attaccante con kali linux e wazuh che gira su ubuntu server.
 
 
-## INDICE DEGLI ATTACCHI
-
-| # | Attacco | MITRE ATT&CK | Stato | Capitolo |
-|---|---------|--------------|-------|----------|
-| 00 | Baseline detection + SIEM | — | !COMPLET0! | `/00-baseline-siem` |
-| 01 | LLMNR/NBT-NS poisoning + NTLM relay | T1557.001 | Da cominciare | `/01-llmnr-relay` |
-| 02 | ACL abuse + BloodHound | T1069/T1087 + T1098/T1222 | Da cominciare | `/02-acl-bloodhound` |
-| 03 | AD CS abuse (ESC1/ESC8) | T1649 | Da cominciare | `/03-adcs-esc` |
-
-
 ----------
 
 ## Architettura
