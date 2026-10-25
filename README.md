@@ -1,8 +1,9 @@
 # AD Attack And Defense Lab
 
 Dopo essermi confrontato con alcuni esperti che hanno valutato i miei progetti precedenti, ho sviluppato questo lab più incentrato sulla sicurezza al momento dell'attacco, che sulle basi sistemistiche di networking.
+
 È un laboratorio di simulazione di attacchi Active Directory dalla doppia prospettiva offensiva e difensiva: per ogni falla volutamente introdotta documento il ciclo:
-configurazione vulnerabile, attacco, traccia difensiva, hardening e infine il re-test per confrontare il paragone.
+configurazione vulnerabile, attacco, traccia difensiva, hardening e infine il re-test.
 
 L'ambiente è un piccolo dominio di active directory virtualizzato su VMware, con un DC, un client w11, una macchina attaccante con kali linux e wazuh che gira su ubuntu server.
 
@@ -33,21 +34,7 @@ Per ciascuna vulnerabilità:
 2. **Faccio l'sttacco e valuto l'impatto** — eseguo l'attacco effettivo e documento il risultato.
 3. **Catturo la traccia difensiva** — identifico quali log/ID registrano l'attacco e come appaiono sul SIEM.
 4. **hardening** — Applico le dovute contromisure.
-5. **Ripeto l'attacco** — stessa tecnica e confrontando il prima e dopo.
-
----
-
-## Struttura del repository
-
-```
-README.md                 ///setup e architettura
-/topology/                ///topologia
-/00-baseline-siem/        ///Wazuh, Sysmon, audit policy
-/01-llmnr-relay/          
-/02-acl-bloodhound/
-/03-adcs-esc/
-```
-
+5. **Ripeto l'attacco** — stessa tecnica e confrontando il prima e dopo.ù+
 ---
 
 ## Setup del lab di base
