@@ -34,7 +34,7 @@ Per ciascuna vulnerabilità:
 2. **Faccio l'attacco e valuto l'impatto** — eseguo l'attacco effettivo e documento il risultato.
 3. **Catturo la traccia difensiva** — identifico quali log/ID registrano l'attacco e come appaiono sul SIEM.
 4. **hardening** — Applico le dovute contromisure.
-5. **Ripeto l'attacco** — stessa tecnica e confrontando il prima e dopo.
+5. **Ripeto l'attacco** — Faccio retest ripetendo la stessa tecnica e confrontando prima e dopo.
 ---
 
 ## Setup del lab di base
@@ -80,9 +80,9 @@ OU dedicata e utenti standard. Gli account vulnerabili specifici verranno creati
 ```powershell
 New-ADOrganizationalUnit -Name "LabUsers" -Path "DC=lab,DC=local"
 
-$pw = ConvertTo-SecureString "Autunno2026!" -AsPlainText -Force
-New-ADUser -Name "Mario Rossi" -SamAccountName "m.rossi" -UserPrincipalName "m.rossi@lab.local" `
-  -Path "OU=LabUsers,DC=lab,DC=local" -AccountPassword $pw -Enabled $true
+$pw = Read-Host "Password per m.rossi" -AsSecureString
+
+New-ADUser -Name "Mario Rossi" -SamAccountName "m.rossi" -UserPrincipalName "m.rossi@lab.local" -Path "OU=LabUsers,DC=lab,DC=local" -AccountPassword $pw -Enabled $true
 ```
 
 ### Attaccante (Kali)
@@ -93,6 +93,9 @@ IP statico sul segmento e DNS verso il DC:
 sudo ip addr add 192.168.56.100/24 dev eth0
 echo "nameserver 192.168.56.10" | sudo tee /etc/resolv.conf
 ```
+
+Nota: la configurazione di rete qui sopra riportata è temporanea, L'indirizzo deve essere riconfigurato dopo un riavvio. 
+Anche la modifica di /etc/resolv.conf può essere sovrascritta da NetworkManager.
 
 ---
 
