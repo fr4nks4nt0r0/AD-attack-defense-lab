@@ -14,14 +14,14 @@ L'ambiente è un piccolo dominio di active directory virtualizzato su VMware, co
 
 | Host | Ruolo | OS | IP |
 |------|-------|----|----|
-| DC01 | Domain Controller e DNS | Windows Server 2022 | `192.168.56.10` |
-| WS01 | Client workstation | Windows 11 | `192.168.56.20` |
-| WS02 | Seconda workstation (per movimento laterale) | Windows 11 | `192.168.56.21` |
-| KALI | Macchina attaccante | Kali Linux | `192.168.56.100` |
-| WAZUH | SIEM / detection | Ubuntu Server 22.04 con Wazuh 4.14 | `192.168.56.50` |
+| DC01 | Domain Controller e DNS | Windows Server 2022 | '192.168.56.10' |
+| WS01 | Client workstation | Windows 11 | '192.168.56.20' |
+| WS02 | Seconda workstation (per movimento laterale) | Windows 11 | '192.168.56.21'| 
+| KALI | Macchina attaccante | Kali Linux | '192.168.56.100' |
+| WAZUH | SIEM/detection | Ubuntu Server 22.04 con Wazuh 4.14 | '192.168.56.50' |
 
-- **Dominio:** `lab.local`
-- **Rete:** host-only `192.168.56.0/24` (VMware VMnet1)
+- **Dominio:** 'lab.local'
+- **Rete:** host-only '192.168.56.0/24' (VMware VMnet1)
 - **Hypervisor:** VMware Workstation
 
 ---
@@ -31,15 +31,15 @@ L'ambiente è un piccolo dominio di active directory virtualizzato su VMware, co
 Per ciascuna vulnerabilità:
 
 1. **Introduco la falla** — configuro il sistema in modo volutamente vulnerabile
-2. **Faccio l'sttacco e valuto l'impatto** — eseguo l'attacco effettivo e documento il risultato.
+2. **Faccio l'attacco e valuto l'impatto** — eseguo l'attacco effettivo e documento il risultato.
 3. **Catturo la traccia difensiva** — identifico quali log/ID registrano l'attacco e come appaiono sul SIEM.
 4. **hardening** — Applico le dovute contromisure.
-5. **Ripeto l'attacco** — stessa tecnica e confrontando il prima e dopo.ù+
+5. **Ripeto l'attacco** — stessa tecnica e confrontando il prima e dopo.
 ---
 
 ## Setup del lab di base
 
-A differenza del mio altro lab su Active Directory, dove ho usato principalmetne l'interfaccia grafica, qui ho voluto lavorare con PowerShell.
+A differenza del mio altro lab su Active Directory, dove ho usato principalmente l'interfaccia grafica, qui ho voluto lavorare con PowerShell.
 
 NOTA: la fondazione di detection (Wazuh + Sysmon + audit policy) è documentata a parte in [`/00-baseline-siem`](./00-baseline-siem).
 
@@ -60,7 +60,7 @@ Install-WindowsFeature AD-Domain-Services -IncludeManagementTools
 Install-ADDSForest -DomainName "lab.local" -DomainNetbiosName "LAB" -InstallDns -Force
 ```
 
-Test di verifica: `Get-ADDomain` deve darmi `lab.local`; `Get-Service ADWS,KDC,Netlogon,DNS` devono essere tutti `Running`.
+Test di verifica: Get-ADDomain deve restituire il dominio lab.local. I servizi ADWS, KDC, Netlogon e DNS devono risultare avviati.
 
 ### Workstation (WS01)
 
@@ -72,7 +72,7 @@ Set-DnsClientServerAddress -InterfaceAlias "Ethernet0" -ServerAddresses 192.168.
 Add-Computer -DomainName "lab.local" -Credential LAB\Administrator -Restart
 ```
 
-Verifica dal Domain Controller: `Get-ADComputer -Filter * | Select Name` deve elencare `WS01`.
+Verifica dal Domain Controller: `Get-ADComputer -Filter * | Select Name` con tutto corretto qui elenca `WS01`.
 
 ### Utenti di base
 
@@ -98,7 +98,7 @@ echo "nameserver 192.168.56.10" | sudo tee /etc/resolv.conf
 
 ## PROBLEMI E SOLUZIONI
 
-Intoppi reali incontrati durante la costruzione del lab. *(Gli intoppi del deploy SIEM sono documentati in `/00-baseline-siem`.)*
+Intoppi reali incontrati durante la costruzione del lab. (Gli intoppi del deploy SIEM sono documentati in `/00-baseline-siem`.)
 
 ### Comandi in inglese che falliscono su Windows in italiano
 Nomi di gruppi e categorie sono localizzati, e stavolta avevo ben pensato di installar un ISO in italiano, di conseguenza alcuni cmd trovati online non hanno funzionato finchè non sono stati riadattati.
