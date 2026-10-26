@@ -98,7 +98,6 @@ $guid = [GUID]"1131f6ad-9c07-11d1-f79f-00c04fc2dcd2"
 $rule = New-Object System.DirectoryServices.ActiveDirectoryAuditRule($everyone,[System.DirectoryServices.ActiveDirectoryRights]::ExtendedRight,[System.Security.AccessControl.AuditFlags]::Success,$guid)
 $acl.AddAuditRule($rule)
 Set-Acl "AD:\DC=lab,DC=local" -AclObject $acl
-gpupdate /force
 ```
 
 l'audit "acceso" quindi senza la SACL giusta sull'oggetto dominio fa passare attacchi gravi come il DCSync senza neanche registrarli. 
@@ -152,7 +151,7 @@ Ora filtro la dashboard per gravità ("rule.level:>=10", Last 15 minutes), l'int
 
 ## HARDENING FINALE E RE-TESTING
 
-La contromisura mira alla causa: il permesso eccessivo. Rimuovo il GenericAll di m.rossi:
+La contromisura mira alla causa: il permesso eccessivo. Rimuovo le ACE associate a m.rossi dall'oggetto Priv Admin, eliminando la delega eccessiva introdotta nello scenario:
 
 ```powershell
 dsacls "CN=Priv Admin,OU=LabUsers,DC=lab,DC=local" /R "LAB\m.rossi"
