@@ -173,6 +173,21 @@ impacket-changepasswd 'lab.local/priv.admin@192.168.56.10' -reset -altuser 'lab.
 M.ROSSI NON CONSENTITO
 ```
 
+### SCREENSHOTS
+
+![Assegnazione GenericAll](screenshots/01-genericall-assegnato.png)
+
+![Percorso BloodHound verso Domain Admins](screenshots/02_bloodhound-path.png)
+
+![Verifica ACL e reset password riuscito](screenshots/03-permesso-reset.png)
+
+![DCSync su krbtgt con dati sensibili oscurati](screenshots/04-dcsync-krbtgt-cens.png)
+
+![Regola personalizzata Wazuh](screenshots/05-wazuh-alerts.png)
+
+![Dettagli dell'evento Windows 4662](screenshots/05-wazuh-alerts2.png)
+
+![Retest dopo l'hardening](screenshots/06-retest-hardening.png)
 
 ## CONCLUSIONE
 
