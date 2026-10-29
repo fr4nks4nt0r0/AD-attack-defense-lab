@@ -118,20 +118,6 @@ WS01 restava con un `169.254.x.x` (APIPA) e non raggiungeva il DC. Impostare sol
 ### hashcat senza GPU in ambiente virtualizzato
 Le VM non hanno accesso alla GPU e hashcat di default la richiede.
 
-### SCREENSHOTS
-![Assegnazione GenericAll](screenshots/01-genericall-assegnato.png)
-
-![Percorso BloodHound verso Domain Admins](screenshots/02_bloodhound-path.png)
-
-![Verifica ACL e reset password riuscito](screenshots/03-permesso-reset.png)
-
-![DCSync su krbtgt con dati sensibili oscurati](screenshots/04-dcsync-krbtgt-cens.png)
-
-![Regola personalizzata Wazuh](screenshots/05-wazuh-alerts.png)
-
-![Dettagli dell'evento Windows 4662](screenshots/05-wazuh-alerts2.png)
-
-![Retest dopo l'hardening](screenshots/06-retest-hardening.png)
 **Risoluzione:** ho usato John the Ripper, che gira su CPU senza configurazione.
 
 ---
