@@ -22,37 +22,30 @@ Gli account di servizio con password statica sono fra le misconfigurazioni più 
 
 ### L'attacco
 
-Il Kerberoasting sfrutta un comportamento legittimo di Kerberos: qualsiasi utente di dominio autenticato può richiedere un ticket di servizio (TGS) per un account con SPN. Quel ticket è cifrato con l'hash della password dell'account di servizio, e può essere SCARICATO e craccato **offline localmente, dove nessun alert di login fallito o limite di tentativi può fermarlo.
+Il Kerberoasting sfrutta un comportamento legittimo di Kerberos: qualsiasi utente di dominio autenticato può richiedere un ticket di servizio (TGS) per un account con SPN. Quel ticket è cifrato con l'hash della password dell'account di servizio, e può essere SCARICATO e craccato offline localmente, dove nessun alert di login fallito o limite di tentativi può fermarlo.
 
-Mi autentico come `m.rossi`, un utente SENZA PRIVILEGI, e richiedo i ticket di tutti gli account con SPN:
+Mi autentico come 'm.rossi', un utente SENZA PRIVILEGI, e richiedo i ticket di tutti gli account con SPN:
 
 ```bash
 impacket-GetUserSPNs lab.local/m.rossi:'Autunno2026!' -dc-ip 192.168.56.10 -request -outputfile kerberoast.txt
 ```
 
-Ottengo l'hash dell'account `svc_sql` (blob `$krb5tgs$23$...`).
-
-![Hash kerberoastato estratto da GetUserSPNs](screenshots/01-getuserspns.png)
-
-Come utente senza privilegi ho estratto dal Domain Controller il materiale crittografico di un account di servizio, niente exploit ma una funzione legittima di Kerberos.
+Ottengo l'hash dell'account 'svc_sql', vcme utente senza privilegi ho estratto dal Domain Controller il materiale crittografico di un account di servizio, niente exploit ma una funzione legittima di Kerberos.
 
 ### Il cracking
 
-Con la password debole iniziale (`Password123`), il crack è immediato usando una wordlist pubblica standard:
+Con la password debole iniziale ('Password123' nel mio caso), il crack è immediato usando una wordlist pubblica standard:
 
 ```bash
 john --format=krb5tgs --wordlist=/usr/share/wordlists/rockyou.txt kerberoast.txt
 john --show --format=krb5tgs kerberoast.txt
-# ?:Password123
 ```
 
-![Password craccata con John the Ripper](screenshots/02-crack-password123.png)
-
-Con pochi secondi  e un dizionario pubblico il gioco è fatto.
+Con pochi secondi e un dizionario pubblico è fatta.
 
 ### La traccia difensiva
 
-Subito dopo l'attacco, sul Domain Controller cerco l'**Event ID 4769** (richiesta di ticket di servizio Kerberos):
+Subito dopo l'attacco sul Domain Controller cerco l'Event ID 4769 (richiesta di ticket di servizio Kerberos):
 
 ```powershell
 Get-WinEvent -FilterHashtable @{LogName='Security';ID=4769} -MaxEvents 20 | Format-List TimeCreated, Message
@@ -62,20 +55,20 @@ L'evento contiene la richiesta del ticket:
 
 | Campo | Valore | Cosa racconta |
 |-------|--------|---------------|
-| Nome account | `m.rossi@LAB.LOCAL` | L'utente non privilegiato che ha richiesto il ticket |
-| Nome servizio | `svc_sql` | L'account di servizio preso di mira |
-| Indirizzo client | `192.168.56.100` | La macchina attaccante (Kali) |
-| **Tipo crittografia ticket** | **`0x17`** | **RC4**|
+| Nome account | 'm.rossi@LAB.LOCAL'| L'utente non privilegiato che ha richiesto il ticket |
+| Nome servizio | 'svc_sql' | L'account di servizio preso di mira |
+| Indirizzo client | '192.168.56.100' | La macchina attaccante (Kali) |
+| **Tipo crittografia ticket** | '0x17' | RC4|
 
 L'evento 4769 registra la richiesta di un ticket Kerberos per un servizio.
-Nel mio test, il tipo di crittografia è `0x17` (RC4-HMAC), che da solo però, non conferma un Kerberoasting: può essere presente anche per motivi di compatibilità.
+Nel mio test, il tipo di crittografia è '0x17' (RC4-HMAC), che da solo però, non conferma un Kerberoasting: può essere presente anche per motivi di compatibilità.
 In un ambiente reale lo correlerei con l'account di servizio richiesto, il numero e la frequenza delle richieste, l'utente che le ha generate e l'indirizzo sorgente.
 
 La detection si basa quindi su una combinazione di indicatori, non sulla semplice presenza di un evento 4769.
 
 ### L'hardening e il re-test
 
-La contromisura mira a ciò che rende l'attacco utile: la password craccabile, ho sostituito la password debole di `svc_sql` con una lunga e casuale:
+La contromisura mira a ciò che rende l'attacco utile: la password craccabile, ho sostituito la password debole di 'svc_sql' con una lunga e casuale:
 
 ```powershell
 Set-ADAccountPassword -Identity svc_sql -Reset -NewPassword (ConvertTo-SecureString "<password lunga casuale di oltre 25 caratteri>" -AsPlainText -Force)
@@ -88,8 +81,6 @@ impacket-GetUserSPNs lab.local/m.rossi:'Autunno2026!' -dc-ip 192.168.56.10 -requ
 john --format=krb5tgs --wordlist=/usr/share/wordlists/rockyou.txt kerberoast_hardened.txt
 ```
 
-![Re-test: hash estratto ma 0 password craccate](screenshots/04-crack-hardened-0g.png)
-
 PRIMA VS DOPO
 
 | | Prima (password debole) | Dopo (password robusta) |
@@ -101,9 +92,11 @@ l'hardening non ha impedito l'attacco nè la richiesta del ticket ma l'ha reso i
 
 ### CONCLUSIONE
 
-- **Soluzione definitiva:** convertire gli account di servizio in **gMSA (Group Managed Service Account)**, dove la password è generata e ruotata dal sistema (120+ caratteri, rotazione automatica, mai nota a un umano). L'hash resta estraibile ma di fatto incraccabile. *(Da implementare come prossimo passo di questo lab.)*
+- **Soluzione definitiva:** convertire gli account di servizio in **gMSA (Group Managed Service Account)**, dove la password è generata e ruotata dal sistema (120+ caratteri, rotazione automatica, mai nota a un umano). L'hash resta estraibile ma di fatto incraccabile.
+!!!!! *Da implementare come prossimo passo di questo lab.* !!!!!
 - **Dove la rotazione automatica non è possibile:** password lunghe e casuali sugli account di servizio, trattate come segreti ad alto valore.
-- **Detection:** monitorare gli Event ID 4769 con crittografia RC4 (`0x17`) richiesti per account di servizio, in particolare da endpoint anomali.
+- **Detection:** monitorare gli Event ID 4769 con crittografia RC4 ('0x17') richiesti per account di servizio, in particolare da endpoint anomali.
+!!!!! *Da implemtantare la detection con wazuh* !!!!!
 - **Riduzione della superficie:** disabilitare RC4 a livello di dominio dove compatibile, forzando AES.
 
 
