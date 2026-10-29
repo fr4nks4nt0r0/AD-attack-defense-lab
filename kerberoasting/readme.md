@@ -58,18 +58,20 @@ Subito dopo l'attacco, sul Domain Controller cerco l'**Event ID 4769** (richiest
 Get-WinEvent -FilterHashtable @{LogName='Security';ID=4769} -MaxEvents 20 | Format-List TimeCreated, Message
 ```
 
-![Event ID 4769 che registra la richiesta di ticket](screenshots/03-event-4769.png)
-
-L'evento contiene l'intera catena dell'attacco in una sola schermata:
+L'evento contiene la richiesta del ticket:
 
 | Campo | Valore | Cosa racconta |
 |-------|--------|---------------|
 | Nome account | `m.rossi@LAB.LOCAL` | L'utente non privilegiato che ha richiesto il ticket |
 | Nome servizio | `svc_sql` | L'account di servizio preso di mira |
 | Indirizzo client | `192.168.56.100` | La macchina attaccante (Kali) |
-| **Tipo crittografia ticket** | **`0x17`** | **RC4 — il campo d'oro** |
+| **Tipo crittografia ticket** | **`0x17`** | **RC4**|
 
-Perché `0x17` è l'indicatore chiave:** il Kerberoasting predilige ticket RC4 ("0x17") perché sono molto più rapidi da craccare rispetto ad AES. In un ambiente sano la maggior parte dei ticket è AES; una richiesta improvvisa di un ticket RC4 per un account di servizio è un'anomalia su cui un analista costruisce una regola di detection. Non basta "c'è un 4769" sono migliaia al giorno. È la combinazione *account di servizio + RC4 + provenienza inattesa* che fa scattare l'allarme.
+L'evento 4769 registra la richiesta di un ticket Kerberos per un servizio.
+Nel mio test, il tipo di crittografia è `0x17` (RC4-HMAC), che da solo però, non conferma un Kerberoasting: può essere presente anche per motivi di compatibilità.
+In un ambiente reale lo correlerei con l'account di servizio richiesto, il numero e la frequenza delle richieste, l'utente che le ha generate e l'indirizzo sorgente.
+
+La detection si basa quindi su una combinazione di indicatori, non sulla semplice presenza di un evento 4769.
 
 ### L'hardening e il re-test
 
@@ -92,10 +94,10 @@ PRIMA VS DOPO
 
 | | Prima (password debole) | Dopo (password robusta) |
 |---|---|---|
-| Estrazione del ticket | riuscita | riuscita (identica) |
-| Esito del cracking | craccata in secondi (`Password123`) | `0 cracked` su rockyou intera |
+| Estrazione del ticket | riuscita | riuscita (uguale) |
+| Esito del cracking | craccata in secondi ('Password123') | '0 cracked' su rockyou intera |
 
-l'hardening non ha impedito l'attacco, l'ha reso inefficace. La superficie di attacco è invariata (qualunque utente può ancora estrarre il ticket); ciò che cambia è che un  a password robusta sposta il cracking da "secondi" a "computazionalmente non praticabile".
+l'hardening non ha impedito l'attacco nè la richiesta del ticket ma l'ha reso inefficace. La superficie di attacco è invariata (qualunque utente può ancora estrarre il ticket); ciò che cambia è che una password robusta sposta il cracking da "secondi" a "computazionalmente non praticabile".
 
 ### CONCLUSIONE
 
