@@ -1,12 +1,17 @@
 # 02 — ACL Abuse, BloodHound e DCSync
 
-MITRE ATT&CK: T1069.002 / T1087.002 (Discovery) /// T1098 (Account Manipulation, mappatura generale della manipolazione dell'account) /// T1078.002 (Valid Accounts: Domain Accounts) /// T1003.006 (OS Credential Dumping: DCSync)
+MITRE ATT&CK: 
+T1069.002, Domain Groups: enumerazione dei gruppi.
+T1087.002, Domain Account: enumerazione degli account.
+T1098, Account Manipulation.
+T1078.002, Domain Accounts: uso di un account di dominio valido.
+T1003.006, DCSync.
 
 ---
 
 ## PROSPETTIVA OFFENSIVA: La catena
 
-Per prima cosa cercando un ingresso noto un permesso eccessivo usando BloodHound, sfrutto questa falla per rubare l'identità di un Domain Admin (tramite un reset password con GenericAll) e con quell'autorità posso controllare il dominio eseguendo un DCSync sul krbtgt.
+Per prima cosa cercando un ingresso noto un permesso eccessivo usando BloodHound, sfrutto questa falla per prendere l'identità di un Domain Admin (tramite un reset password con GenericAll) e con quell'autorità posso controllare il dominio eseguendo un DCSync sul krbtgt.
 
 ---
 
@@ -125,15 +130,13 @@ Ho scritto tre regole in "/var/ossec/etc/rules/local_rules.xml" sul server Wazuh
 <rule id="100101" level="12">
   <if_group>windows</if_group>
   <field name="win.system.eventID">^4724$</field>
-  <description>Reset password di un account tramite privilegio (possibile abuso GenericAll/ACL)</description>
-  <mitre><id>T1222.001</id></mitre>
+  <description>Reset password di un account: verificare autore e contesto</description>
 </rule>
 
 <rule id="100102" level="10">
   <if_group>windows</if_group>
   <field name="win.system.eventID">^5136$</field>
-  <description>Modifica DACL su oggetto Active Directory (possibile ACL abuse / delega sospetta)</description>
-  <mitre><id>T1222.001</id></mitre>
+  <description>Modifica di un oggetto Active Directory: verificare attributo e autore</description
 </rule>
 ```
 
@@ -151,7 +154,7 @@ Ora filtro la dashboard per gravità ("rule.level:>=10", Last 15 minutes), l'int
 
 ## HARDENING FINALE E RE-TESTING
 
-La contromisura mira alla causa: il permesso eccessivo. Rimuovo le ACE associate a m.rossi dall'oggetto Priv Admin, eliminando la delega eccessiva introdotta nello scenario:
+La contromisura mira alla causa: il permesso eccessivo. Rimuovo le ACE associate a m.rossi dall'oggetto Priv Admin togliendo così la delega eccessiva:
 
 ```powershell
 dsacls "CN=Priv Admin,OU=LabUsers,DC=lab,DC=local" /R "LAB\m.rossi"
