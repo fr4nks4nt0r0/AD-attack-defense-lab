@@ -122,7 +122,7 @@ Ho scritto tre regole in "/var/ossec/etc/rules/local_rules.xml" sul server Wazuh
 <rule id="100100" level="14">
   <if_group>windows</if_group>
   <field name="win.system.eventID">^4662$</field>
-  <field name="win.eventdata.properties" type="pcre2">(?i)1131f6ad-9c07-11d1-f79f-00c04fc2dcd2|1131f6aa-9c07-11d1-f79f-00c04fc2dcd2</field>
+  <field name="win.eventdata.properties">1131f6ad-9c07-11d1-f79f-00c04fc2dcd2</field>
   <description>DCSync: richiesta di replica delle credenziali di dominio (potenziale dump NTDS/krbtgt)</description>
   <mitre><id>T1003.006</id></mitre>
 </rule>
@@ -136,7 +136,7 @@ Ho scritto tre regole in "/var/ossec/etc/rules/local_rules.xml" sul server Wazuh
 <rule id="100102" level="10">
   <if_group>windows</if_group>
   <field name="win.system.eventID">^5136$</field>
-  <description>Modifica di un oggetto Active Directory: verificare attributo e autore</description
+  <description>Modifica di un oggetto Active Directory: verificare attributo e autore</description>
 </rule>
 ```
 
