@@ -7,7 +7,13 @@ configurazione vulnerabile, attacco, traccia difensiva, hardening e infine il re
 
 L'ambiente è un piccolo dominio di active directory virtualizzato su VMware, con un DC, un client w11, una macchina attaccante con kali linux e wazuh che gira su ubuntu server.
 
+## Stato del lab
 
+| # | Capitolo | Tecnica MITRE | Stato |
+|---|----------|---------------|-------|
+| 00 | Baseline SIEM | - | Completato | 
+| 01 | Kerberoasting | T1558.003 | Parziale |
+| 02 | ACL Abuse/BloodHound/DCSync | T1069.002, T1003.006 | Completo |
 ----------
 
 ## Architettura
