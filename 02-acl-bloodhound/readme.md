@@ -107,7 +107,7 @@ Set-Acl "AD:\DC=lab,DC=local" -AclObject $acl
 
 l'audit "acceso" quindi senza la SACL giusta sull'oggetto dominio fa passare attacchi gravi come il DCSync senza neanche registrarli. 
 
-Idem per il 5136 (modifica DACL), che vuole sottocategoria Directory Service Changes PIù SACL sull'OU e un successivo "gpupdate /force".
+Idem per il 5136 (modifica DACL), che vuole sottocategoria Directory Service Changes PIù SACL sull'OU e un successivo "gpupdate /force" per accelerare.
 
 Una cosa, gli eventi arrivano al SIEM, ma:
 - 4724 (reset) e 5136 (modifica DACL) hanno già un rule level assegnato da Wazuh.
@@ -116,7 +116,7 @@ Una cosa, gli eventi arrivano al SIEM, ma:
 
 ### REGOLE DI DETECTION CUSTOM
 
-Ho scritto tre regole in "/var/ossec/etc/rules/local_rules.xml" sul server Wazuh, la regola DCSync sfrutta una regex avanzata per intercettare i principali GUID di replica (Get-Changes e Get-Changes-All), evitando falsi negativi:
+Ho scritto tre regole in "/var/ossec/etc/rules/local_rules.xml" sul server Wazuh. La regola DCSync identifica gli eventi 4662 che contengono il GUID del diritto DS-Replication-Get-Changes-All. Nel test eseguito, questa condizione ha generato l'alert previsto.
 
 ```xml
 <rule id="100100" level="14">
