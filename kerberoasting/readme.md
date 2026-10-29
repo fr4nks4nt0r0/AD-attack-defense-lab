@@ -1,8 +1,14 @@
 ## CAPITOLO 1 — Kerberoasting
 
+**PREMESSA:** originariamente questo attacco è stato fatto prima di implementare la baseline con wazuh, motivo per cui uso event id. 
+Ripeterò la sezione di detection sfruttando il siem.
+
+**MITRE ATT&CK:** T1558.003 — Steal or Forge Kerberos Tickets: Kerberoasting
+
+
 ### La debolezza
 
-Ho creato un account di servizio, `svc_sql`, con un **Service Principal Name (SPN)** registrato e una password debole.
+Ho creato un account di servizio, 'svc_sql', con un **Service Principal Name (SPN)** registrato e una password debole nella variabile $pw.
 
 ```powershell
 # Account di servizio con SPN (simula un servizio MSSQL)
