@@ -4,8 +4,6 @@ Prima di attaccare niente serve un SIEM, ho scelto Wazuh nel mio caso, con Sysmo
 
 Premetto che in questa sezione non farò hardening, disattivare LLMNR, correggere le ACL ecc è una parte di ogni di ciascun capitolo, come contromisura specifica. 
 
-STRUTTURA NELLA CARTELLA /topologia
-
 
 
 ### SETUP DEL SIEM
